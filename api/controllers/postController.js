@@ -46,6 +46,11 @@ exports.post_list = function (req, res, next) {
 exports.post_detail = function (req, res, next) {
   Post.findById(req.params.postId).populate('author').exec((err, post) => {
     if (err) return next(err);
+    if (typeof post === 'undefined') {
+      const error = new Error('Post not found.');
+      error.status = 404;
+      return next(error);
+    }
     res.json(post);
   });
 };
@@ -63,8 +68,8 @@ exports.post_update_get = function (req, res, next) {
   });
 };
 
-// Update a post (POST)
-exports.post_update_post = [
+// Update a post (PUT)
+exports.post_update_put = [
   // Validation
   body('title', 'Title must be specified.').trim().isLength({ min: 1 }),
   body('content', 'Content must be specified.').trim().isLength({ min: 1 }),
@@ -109,7 +114,7 @@ exports.post_delete_get = function (req, res, next) {
 };
 
 // Delete a post (POST)
-exports.post_delete_post = function (req, res, next) {
+exports.post_delete = function (req, res, next) {
   Post.findByIdAndRemove(req.params.postId, (err) => {
     if (err) return next(err);
     res.redirect('/posts');

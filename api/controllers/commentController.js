@@ -61,8 +61,8 @@ exports.comment_update_get = function (req, res, next) {
   });
 };
 
-// Update a comment (POST)
-exports.comment_update_post = [
+// Update a comment (PUT)
+exports.comment_update_put = [
   // Validation
   body('content', 'Content must be specified.').trim().isLength({ min: 1 }),
 
@@ -103,8 +103,8 @@ exports.comment_delete_get = function (req, res, next) {
   });
 };
 
-// Delete a comment (POST)
-exports.comment_delete_post = function (req, res, next) {
+// Delete a comment
+exports.comment_delete = function (req, res, next) {
   Comment.findByIdAndRemove(req.params.commentId, (err) => {
     if (err) return next(err);
     res.redirect(`/posts/${req.params.postId}`);
