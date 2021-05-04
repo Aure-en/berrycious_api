@@ -44,7 +44,7 @@ exports.post_list = function (req, res, next) {
 
 // Read a specific post
 exports.post_detail = function (req, res, next) {
-  Post.findById(req.params.id).populate('author').exec((err, post) => {
+  Post.findById(req.params.postId).populate('author').exec((err, post) => {
     if (err) return next(err);
     res.json(post);
   });
@@ -52,7 +52,7 @@ exports.post_detail = function (req, res, next) {
 
 // Update a post (GET)
 exports.post_update_get = function (req, res, next) {
-  Post.findById(req.params.id).populate('author').exec((err, post) => {
+  Post.findById(req.params.postId).populate('author').exec((err, post) => {
     if (err) return next(err);
     if (typeof post === 'undefined') {
       const error = new Error('Post not found.');
@@ -84,11 +84,11 @@ exports.post_update_post = [
       images: req.body.images,
       timestamp: new Date(),
       published: req.body.published,
-      _id: req.params.id,
+      _id: req.params.postId,
     });
 
     // Data is valid, update the post.
-    Post.findByIdAndUpdate(req.params.id, post, {}, (err) => {
+    Post.findByIdAndUpdate(req.params.postId, post, {}, (err) => {
       if (err) return next(err);
       res.redirect(post.url);
     });
@@ -97,7 +97,7 @@ exports.post_update_post = [
 
 // Delete a post (GET)
 exports.post_delete_get = function (req, res, next) {
-  Post.findById(req.params.id).populate('author').exec((err, post) => {
+  Post.findById(req.params.postId).populate('author').exec((err, post) => {
     if (err) return next(err);
     if (typeof post === 'undefined') {
       const error = new Error('Post not found.');
@@ -110,7 +110,7 @@ exports.post_delete_get = function (req, res, next) {
 
 // Delete a post (POST)
 exports.post_delete_post = function (req, res, next) {
-  Post.findByIdAndRemove(req.params.id, (err) => {
+  Post.findByIdAndRemove(req.params.postId, (err) => {
     if (err) return next(err);
     res.redirect('/posts');
   });
