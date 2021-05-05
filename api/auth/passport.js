@@ -32,7 +32,7 @@ passport.use(new JWTStrategy({
   secretOrKey: process.env.JWT_SECRET,
 }, ((jwtPayload, done) => {
   if (jwtPayload) {
-    return done(null, true);
+    return done(null, jwtPayload);
   }
   return done(null, false);
 })));

@@ -5,7 +5,7 @@ const Post = require('../models/post');
 exports.post_create_post = [
   // Validation
   body('title', 'Title must be specified.').trim().isLength({ min: 1 }),
-  body('content', 'Content must be specified.').trim().isLength({ min: 1 }),
+  body('text', 'Text must be specified.').trim().isLength({ min: 1 }),
 
   (req, res, next) => {
     const errors = validationResult(req);
@@ -18,7 +18,7 @@ exports.post_create_post = [
     // Data form is valid
     // Create the post with the data
     const post = new Post({
-      author: '',
+      author: req.user._id,
       title: req.body.title,
       text: req.body.text,
       images: req.body.images,
@@ -44,19 +44,7 @@ exports.post_list = function (req, res, next) {
 
 // Read a specific post
 exports.post_detail = function (req, res, next) {
-  Post.findById(req.params.postId).populate('author').exec((err, post) => {
-    if (err) return next(err);
-    if (typeof post === 'undefined') {
-      const error = new Error('Post not found.');
-      error.status = 404;
-      return next(error);
-    }
-    res.json(post);
-  });
-};
-
-// Update a post (GET)
-exports.post_update_get = function (req, res, next) {
+  console.log(req.params.postId);
   Post.findById(req.params.postId).populate('author').exec((err, post) => {
     if (err) return next(err);
     if (typeof post === 'undefined') {
@@ -72,7 +60,7 @@ exports.post_update_get = function (req, res, next) {
 exports.post_update_put = [
   // Validation
   body('title', 'Title must be specified.').trim().isLength({ min: 1 }),
-  body('content', 'Content must be specified.').trim().isLength({ min: 1 }),
+  body('text', 'Text must be specified.').trim().isLength({ min: 1 }),
 
   (req, res, next) => {
     const errors = validationResult(req);
@@ -83,7 +71,7 @@ exports.post_update_put = [
     }
 
     const post = new Post({
-      author: '',
+      author: req.user._id,
       title: req.body.title,
       text: req.body.text,
       images: req.body.images,
@@ -95,28 +83,34 @@ exports.post_update_put = [
     // Data is valid, update the post.
     Post.findByIdAndUpdate(req.params.postId, post, {}, (err) => {
       if (err) return next(err);
+      console.log('post', post);
       res.redirect(post.url);
     });
   },
 ];
-
-// Delete a post (GET)
-exports.post_delete_get = function (req, res, next) {
-  Post.findById(req.params.postId).populate('author').exec((err, post) => {
-    if (err) return next(err);
-    if (typeof post === 'undefined') {
-      const error = new Error('Post not found.');
-      error.status = 404;
-      return next(error);
-    }
-    res.json(post);
-  });
-};
 
 // Delete a post (POST)
 exports.post_delete = function (req, res, next) {
   Post.findByIdAndRemove(req.params.postId, (err) => {
     if (err) return next(err);
     res.redirect('/posts');
+  });
+};
+
+exports.check_author = function (req, res, next) {
+  Post.findById(req.params.postId).exec((err, post) => {
+    if (err) return next(err);
+    if (typeof post === 'undefined') {
+      const error = new Error('Post not found.');
+      error.status = 404;
+      return next(error);
+    }
+    if (req.user._id !== post.author.toString()) {
+      console.log('Not the author');
+      res.status(403).send('Sorry, only the author may modify the post.');
+    } else {
+      console.log('Author is allowed.');
+      next();
+    }
   });
 };
