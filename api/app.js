@@ -5,16 +5,17 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
 const mongoose = require('mongoose');
-require('dotenv').config({ path: `${__dirname}/.env.local` });
+require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') });
+require('./auth/passport');
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const postsRouter = require('./routes/posts');
+const authRouter = require('./routes/auth');
 
 const app = express();
 
 // Set up mongoose
-
 const mongoDB = `mongodb+srv://Aureen:${process.env.MONGODB_PASSWORD}@lettuceat.iqrxt.mongodb.net/lettuce_eat?retryWrites=true&w=majority`;
 mongoose.connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true });
 const db = mongoose.connection;
@@ -31,14 +32,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use((req, res, next) => {
-  res.locals.currentUser = req.user;
-  next();
-});
-
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/posts', postsRouter);
+app.use('/auth', authRouter);
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

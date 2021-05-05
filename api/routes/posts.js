@@ -21,3 +21,5 @@ router.get('/:postId', postController.post_detail);
 
 // Request for comments
 router.use('/:postId/comments', commentRouter);
+
+module.exports = router;

@@ -17,3 +17,5 @@ router.delete(':/commentId', commentController.comment_delete);
 
 // GET request for a specific comment
 router.get(':/commentId', commentController.comment_detail);
+
+module.exports = router;
