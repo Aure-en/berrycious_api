@@ -86,5 +86,4 @@ exports.auth_signup_post = [
       });
     });
   },
-
 ];

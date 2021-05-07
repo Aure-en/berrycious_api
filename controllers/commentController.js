@@ -19,7 +19,6 @@ exports.comment_create_post = [
 
     // Data form is valid
     // Create the comment with the data
-    console.log(req.user, req.user && req.user._id);
     const comment = new Comment({
       username: req.body.username,
       content: req.body.content,
@@ -59,30 +58,33 @@ exports.comment_reply_post = [
       parent: req.params.commentId,
     });
 
-    async.parallel([
-      // Save the new comment
-      function (callback) {
-        comment.save((err) => {
-          if (err) return next(err);
-          callback();
-        });
-      },
-      function (callback) {
-        // Update the parent comment's children
-        Comment.findByIdAndUpdate(
-          req.params.commentId,
-          { $push: { children: comment._id } },
-          {},
-          (err) => {
+    async.parallel(
+      [
+        // Save the new comment
+        function (callback) {
+          comment.save((err) => {
             if (err) return next(err);
             callback();
-          },
-        );
+          });
+        },
+        function (callback) {
+          // Update the parent comment's children
+          Comment.findByIdAndUpdate(
+            req.params.commentId,
+            { $push: { children: comment._id } },
+            {},
+            (err) => {
+              if (err) return next(err);
+              callback();
+            },
+          );
+        },
+      ],
+      (err) => {
+        if (err) return next(err);
+        res.redirect(`/posts/${req.params.postId}/comments`);
       },
-    ], (err) => {
-      if (err) return next(err);
-      res.redirect(`/posts/${req.params.postId}/comments`);
-    });
+    );
   },
 ];
 
@@ -148,18 +150,77 @@ exports.comment_delete = function (req, res, next) {
   });
 };
 
-// Check if user is the post author
-// Only post authors can delete comments on their posts.
-exports.check_post_author = function (req, res, next) {
-  Post.findById(req.params.postId).exec((err, post) => {
+/* Delete Permission. If the comment was posted:
+  - Anonymously: in that case, only the post author may delete it.
+  - By a registered user: comment author & post author may delete it.
+*/
+exports.check_delete_permission = function (req, res, next) {
+  async.waterfall(
+    [
+      // Get post author
+      function (callback) {
+        Post.findById(req.params.postId).exec((err, post) => {
+          if (err) return next(err);
+          if (typeof post === 'undefined') {
+            const error = new Error('Post not found.');
+            error.status = 404;
+            return next(error);
+          }
+          callback(null, post.author);
+        });
+      },
+      function (author) {
+        Comment.findById(req.params.commentId).exec((err, comment) => {
+          if (err) return next(err);
+          if (typeof comment === 'undefined') {
+            const error = new Error('Comment not found');
+            error.status = 404;
+            return next(error);
+          }
+
+          // If comment was written by an anonymous user,
+          // Only the post author may delete it.
+          if (!comment.account) {
+            if (req.user._id !== author.toString()) {
+              res
+                .status(403)
+                .send('Sorry, only the post author may delete the comment.');
+            } else {
+              next();
+            }
+          } else if (
+            req.user._id !== author.toString()
+            && req.user._id !== comment.account.toString()
+          ) {
+            res
+              .status(403)
+              .send(
+                'Sorry, only the comment and post authors may modify the comment.',
+              );
+          } else {
+            next();
+          }
+        });
+      },
+    ],
+  );
+};
+
+/* Update Permission:
+  - Comments can only be modified by their author if they were logged in.
+*/
+exports.check_update_permission = function (req, res, next) {
+  Comment.findById(req.params.commentId, (err, comment) => {
     if (err) return next(err);
-    if (typeof post === 'undefined') {
-      const error = new Error('Post not found.');
+    if (typeof comment === 'undefined') {
+      const error = new Error('Comment not found.');
       error.status = 404;
       return next(error);
     }
-    if (req.user._id !== post.author.toString()) {
-      res.status(403).send('Sorry, only the post author may delete comments.');
+    if (!comment.account) {
+      res.status(403).send('Sorry, anonymously written comments cannot be modified.');
+    } else if (req.user._id !== comment.account.toString()) {
+      res.status(403).send('Sorry, only the author may edit the comment.');
     } else {
       next();
     }

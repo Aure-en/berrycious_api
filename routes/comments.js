@@ -24,11 +24,19 @@ router.post(
 // GET request to update a comment
 router.get('/:commentId/edit', commentController.comment_detail);
 
+// PUT request to update a comment
+router.put(
+  '/:commentId',
+  passport.authenticate('jwt', { session: false }),
+  commentController.check_update_permission,
+  commentController.comment_update_put,
+);
+
 // DELETE request to delete a comment
 router.delete(
   '/:commentId',
   passport.authenticate('jwt', { session: false }),
-  commentController.check_post_author,
+  commentController.check_delete_permission,
   commentController.comment_delete,
 );
 
