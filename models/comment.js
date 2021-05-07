@@ -4,10 +4,13 @@ const { Schema } = mongoose;
 
 const CommentSchema = new Schema(
   {
-    author: { type: String, required: true },
+    username: { type: String, required: true },
     content: { type: String, required: true },
     timestamp: { type: Date, required: true },
     post: { type: Schema.Types.ObjectId, ref: 'Post', required: true },
+    parent: { type: Schema.Types.ObjectId, ref: 'Comment' },
+    children: [{ type: Schema.Types.ObjectId, ref: 'Comment' }],
+    account: { type: Schema.Types.ObjectId, ref: 'User' },
   },
 );
 

@@ -1,3 +1,4 @@
+const async = require('async');
 const { body, validationResult } = require('express-validator');
 const Comment = require('../models/comment');
 const Post = require('../models/post');
@@ -19,7 +20,7 @@ exports.comment_create_post = [
     // Data form is valid
     // Create the comment with the data
     const comment = new Comment({
-      author: req.body.username,
+      username: req.body.username,
       content: req.body.content,
       timestamp: new Date(),
       post: req.params.postId,
@@ -32,7 +33,58 @@ exports.comment_create_post = [
   },
 ];
 
-// Read all comments from one post
+// Reply to a comment (POST)
+exports.comment_reply_post = [
+  // Validation
+  body('username', 'Username must be specified.').trim().isLength({ min: 1 }),
+  body('content', 'Content must be specified.').trim().isLength({ min: 1 }),
+
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      // There are errors. Send errors.
+      res.json({ errors: errors.array() });
+      return;
+    }
+
+    // Data form is valid
+    // Create the new comment with the data
+    const comment = new Comment({
+      username: req.body.username,
+      content: req.body.content,
+      timestamp: new Date(),
+      post: req.params.postId,
+      parent: req.params.commentId,
+    });
+
+    async.parallel([
+      // Save the new comment
+      function (callback) {
+        comment.save((err) => {
+          if (err) return next(err);
+          callback();
+        });
+      },
+      function (callback) {
+        // Update the parent comment's children
+        Comment.findByIdAndUpdate(
+          req.params.commentId,
+          { $push: { children: comment._id } },
+          {},
+          (err) => {
+            if (err) return next(err);
+            callback();
+          },
+        );
+      },
+    ], (err) => {
+      if (err) return next(err);
+      res.redirect(`/posts/${req.params.postId}/comments`);
+    });
+  },
+];
+
+// Read all comments from one post (GET)
 exports.comment_list = function (req, res, next) {
   Comment.find({ post: req.params.postId })
     .sort({ timestamp: 'desc' })
@@ -42,7 +94,7 @@ exports.comment_list = function (req, res, next) {
     });
 };
 
-// Read a specific post
+// Read a specific post (GET)
 exports.comment_detail = function (req, res, next) {
   Comment.findById(req.params.commentId).exec((err, comment) => {
     if (err) return next(err);
@@ -71,7 +123,7 @@ exports.comment_update_put = [
     }
 
     const comment = new Comment({
-      author: req.body.username,
+      username: req.body.username,
       content: req.body.content,
       timestamp: new Date(),
       post: req.params.postId,
@@ -86,7 +138,7 @@ exports.comment_update_put = [
   },
 ];
 
-// Delete a comment
+// Delete a comment (DELETE)
 exports.comment_delete = function (req, res, next) {
   Comment.findByIdAndRemove(req.params.commentId, (err) => {
     if (err) return next(err);

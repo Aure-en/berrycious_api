@@ -10,6 +10,9 @@ router.get('/', commentController.comment_list);
 // POST request to create a new comment
 router.post('/', commentController.comment_create_post);
 
+// POST request to reply to a comment
+router.post('/:commentId', commentController.comment_reply_post);
+
 // GET request to update a comment
 router.get('/:commentId/edit', commentController.comment_detail);
 
