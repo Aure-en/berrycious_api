@@ -1,5 +1,7 @@
+const async = require('async');
 const { body, validationResult } = require('express-validator');
 const Post = require('../models/post');
+const Comment = require('../models/comment');
 
 // Create a post (POST)
 exports.post_create_post = [
@@ -90,7 +92,20 @@ exports.post_update_put = [
 
 // Delete a post (POST)
 exports.post_delete = function (req, res, next) {
-  Post.findByIdAndRemove(req.params.postId, (err) => {
+  async.parallel([
+    function (callback) {
+      Post.findByIdAndRemove(req.params.postId, (err) => {
+        if (err) return next(err);
+        callback();
+      });
+    },
+    function (callback) {
+      Comment.deleteMany({ post: req.params.postId }, (err) => {
+        if (err) return next(err);
+        callback();
+      });
+    },
+  ], (err) => {
     if (err) return next(err);
     res.redirect('/posts');
   });
