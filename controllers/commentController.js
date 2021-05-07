@@ -56,6 +56,7 @@ exports.comment_detail = function (req, res, next) {
 };
 
 // Update a comment (PUT)
+// Not used right now, as no account is required to comment - so no edit is allowed.
 exports.comment_update_put = [
   // Validation
   body('username', 'Username must be specified.').trim().isLength({ min: 1 }),
@@ -98,8 +99,8 @@ exports.comment_delete = function (req, res, next) {
 exports.check_post_author = function (req, res, next) {
   Post.findById(req.params.postId).exec((err, post) => {
     if (err) return next(err);
-    if (typeof comment === 'undefined') {
-      const error = new Error('Comment not found.');
+    if (typeof post === 'undefined') {
+      const error = new Error('Post not found.');
       error.status = 404;
       return next(error);
     }

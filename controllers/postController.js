@@ -67,6 +67,7 @@ exports.post_update_put = [
     if (!errors.isEmpty()) {
       // There are errors. Send them.
       res.json({ errors: errors.array() });
+      return;
     }
 
     const post = new Post({

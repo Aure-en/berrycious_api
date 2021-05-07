@@ -13,6 +13,7 @@ exports.auth_login_post = [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.json(errors);
+      return;
     }
 
     passport.authenticate('local', { session: false }, (err, user, info) => {
@@ -36,13 +37,37 @@ exports.auth_signup_post = [
   body('username', 'Username must be specified').trim().isLength({ min: 1 }),
   body('password', 'Password must be specified').trim().isLength({ min: 1 }),
 
+  // Check for errors
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.json(errors);
-      return;
     }
+    next();
+  },
 
+  // Check if username is already taken
+  (req, res, next) => {
+    User.findOne({ username: req.body.username }).exec((err, user) => {
+      if (err) return next(err);
+      if (user) {
+        res.json({
+          errors: [
+            {
+              value: '',
+              msg: 'Username is already taken.',
+              param: 'username',
+              location: 'body',
+            },
+          ],
+        });
+      }
+    });
+    next();
+  },
+
+  // Everything is fine, save the user.
+  (req, res, next) => {
     // Hash password and save the user in the database
     bcrypt.hash(req.body.password, 10, (err, hashedPassword) => {
       if (err) return next(err);
@@ -61,4 +86,5 @@ exports.auth_signup_post = [
       });
     });
   },
+
 ];
