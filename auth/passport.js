@@ -1,7 +1,7 @@
 const passport = require('passport');
 const passportJWT = require('passport-jwt');
 const LocalStrategy = require('passport-local').Strategy;
-
+const AnonymousStrategy = require('passport-anonymous').Strategy;
 const JWTStrategy = passportJWT.Strategy;
 const ExtractJWT = passportJWT.ExtractJwt;
 const bcrypt = require('bcryptjs');
@@ -36,3 +36,5 @@ passport.use(new JWTStrategy({
   }
   return done(null, false);
 })));
+
+passport.use(new AnonymousStrategy());

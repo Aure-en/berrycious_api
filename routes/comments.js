@@ -1,17 +1,25 @@
 const express = require('express');
 const passport = require('passport');
-
 const commentController = require('../controllers/commentController');
+
 const router = express.Router({ mergeParams: true });
 
 // GET comments
 router.get('/', commentController.comment_list);
 
 // POST request to create a new comment
-router.post('/', commentController.comment_create_post);
+router.post(
+  '/',
+  passport.authenticate(['jwt', 'anonymous'], { session: false }),
+  commentController.comment_create_post,
+);
 
 // POST request to reply to a comment
-router.post('/:commentId', commentController.comment_reply_post);
+router.post(
+  '/:commentId',
+  passport.authenticate(['jwt', 'anonymous'], { session: false }),
+  commentController.comment_reply_post,
+);
 
 // GET request to update a comment
 router.get('/:commentId/edit', commentController.comment_detail);

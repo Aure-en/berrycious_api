@@ -19,16 +19,18 @@ exports.comment_create_post = [
 
     // Data form is valid
     // Create the comment with the data
+    console.log(req.user, req.user && req.user._id);
     const comment = new Comment({
       username: req.body.username,
       content: req.body.content,
       timestamp: new Date(),
       post: req.params.postId,
+      account: req.user && req.user._id,
     });
 
     comment.save((err) => {
       if (err) return next(err);
-      res.redirect(`/posts/${req.params.postId}`);
+      res.redirect(comment.url);
     });
   },
 ];
