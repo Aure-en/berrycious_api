@@ -25,7 +25,7 @@ exports.auth_login_post = [
       req.login(user, { session: false }, (err) => {
         if (err) res.send(err);
         // Generate a JWT with the contents of user object
-        const token = jwt.sign(user, process.env.JWT_SECRET);
+        const token = jwt.sign(user.toJSON(), process.env.JWT_SECRET);
         return res.json({ user, token });
       });
     })(req, res);

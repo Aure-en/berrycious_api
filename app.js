@@ -5,7 +5,7 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
 const mongoose = require('mongoose');
-require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') });
+require('dotenv').config({ path: path.resolve(__dirname, '.env.local') });
 require('./auth/passport');
 
 const indexRouter = require('./routes/index');

@@ -35,7 +35,7 @@ exports.post_create_post = [
 
 // Read all posts
 exports.post_list = function (req, res, next) {
-  Post.find().sort(['timestamp', 'descending'])
+  Post.find().sort({ timestamp: 'desc' })
     .populate('author').exec((err, posts) => {
       if (err) return next(err);
       res.json(posts);
@@ -44,7 +44,6 @@ exports.post_list = function (req, res, next) {
 
 // Read a specific post
 exports.post_detail = function (req, res, next) {
-  console.log(req.params.postId);
   Post.findById(req.params.postId).populate('author').exec((err, post) => {
     if (err) return next(err);
     if (typeof post === 'undefined') {
@@ -83,7 +82,6 @@ exports.post_update_put = [
     // Data is valid, update the post.
     Post.findByIdAndUpdate(req.params.postId, post, {}, (err) => {
       if (err) return next(err);
-      console.log('post', post);
       res.redirect(post.url);
     });
   },
@@ -106,10 +104,8 @@ exports.check_author = function (req, res, next) {
       return next(error);
     }
     if (req.user._id !== post.author.toString()) {
-      console.log('Not the author');
       res.status(403).send('Sorry, only the author may modify the post.');
     } else {
-      console.log('Author is allowed.');
       next();
     }
   });

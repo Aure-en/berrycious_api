@@ -1,9 +1,11 @@
 const { body, validationResult } = require('express-validator');
 const Comment = require('../models/comment');
+const Post = require('../models/post');
 
 // Create a comment (POST)
 exports.comment_create_post = [
   // Validation
+  body('username', 'Username must be specified.').trim().isLength({ min: 1 }),
   body('content', 'Content must be specified.').trim().isLength({ min: 1 }),
 
   (req, res, next) => {
@@ -33,7 +35,7 @@ exports.comment_create_post = [
 // Read all comments from one post
 exports.comment_list = function (req, res, next) {
   Comment.find({ post: req.params.postId })
-    .sort(['timestamp', 'descending'])
+    .sort({ timestamp: 'desc' })
     .exec((err, comments) => {
       if (err) return next(err);
       res.json(comments);
@@ -42,14 +44,6 @@ exports.comment_list = function (req, res, next) {
 
 // Read a specific post
 exports.comment_detail = function (req, res, next) {
-  Comment.findById(req.params.commentId).exec((err, comment) => {
-    if (err) return next(err);
-    res.json(comment);
-  });
-};
-
-// Update a comment (GET)
-exports.comment_update_get = function (req, res, next) {
   Comment.findById(req.params.commentId).exec((err, comment) => {
     if (err) return next(err);
     if (typeof comment === 'undefined') {
@@ -64,6 +58,7 @@ exports.comment_update_get = function (req, res, next) {
 // Update a comment (PUT)
 exports.comment_update_put = [
   // Validation
+  body('username', 'Username must be specified.').trim().isLength({ min: 1 }),
   body('content', 'Content must be specified.').trim().isLength({ min: 1 }),
 
   (req, res, next) => {
@@ -90,23 +85,28 @@ exports.comment_update_put = [
   },
 ];
 
-// Delete a comment (GET)
-exports.comment_delete_get = function (req, res, next) {
-  Comment.findById(req.params.commentId).exec((err, comment) => {
+// Delete a comment
+exports.comment_delete = function (req, res, next) {
+  Comment.findByIdAndRemove(req.params.commentId, (err) => {
+    if (err) return next(err);
+    res.redirect(`/posts/${req.params.postId}`);
+  });
+};
+
+// Check if user is the post author
+// Only post authors can delete comments on their posts.
+exports.check_post_author = function (req, res, next) {
+  Post.findById(req.params.postId).exec((err, post) => {
     if (err) return next(err);
     if (typeof comment === 'undefined') {
       const error = new Error('Comment not found.');
       error.status = 404;
       return next(error);
     }
-    res.json(comment);
-  });
-};
-
-// Delete a comment
-exports.comment_delete = function (req, res, next) {
-  Comment.findByIdAndRemove(req.params.commentId, (err) => {
-    if (err) return next(err);
-    res.redirect(`/posts/${req.params.postId}`);
+    if (req.user._id !== post.author.toString()) {
+      res.status(403).send('Sorry, only the post author may delete comments.');
+    } else {
+      next();
+    }
   });
 };
