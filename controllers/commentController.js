@@ -142,12 +142,44 @@ exports.comment_update_put = [
   },
 ];
 
-// Delete a comment (DELETE)
+/* Delete a comment (DELETE)
+- If the comment has children, change the text and author to [removed]
+- If the comment does not have children, remove the comment.
+*/
 exports.comment_delete = function (req, res, next) {
-  Comment.findByIdAndRemove(req.params.commentId, (err) => {
-    if (err) return next(err);
-    res.redirect(`/posts/${req.params.postId}`);
-  });
+  async.waterfall([
+    // Get the comment and send its children field
+    function (callback) {
+      Comment.findById(req.params.commentId).exec((err, comment) => {
+        if (err) return next(err);
+        if (!comment) {
+          const error = new Error('Comment not found.');
+          error.status = 404;
+          return next(error);
+        }
+        callback(null, comment.children);
+      });
+    },
+    function (children) {
+      // If the comment has no children, simply delete it.
+      if (children.length === 0) {
+        Comment.findByIdAndRemove(req.params.commentId, (err) => {
+          if (err) return next(err);
+          res.redirect(`/posts/${req.params.postId}/comments`);
+        });
+      } else {
+        // If the comment had children, keep the document but
+        // erase the text and author.
+        Comment.findByIdAndUpdate(req.params.commentId, {
+          username: '[removed]', content: '[removed]', account: undefined, deleted: true,
+        },
+        (err) => {
+          if (err) return next(err);
+          res.redirect(`/posts/${req.params.postId}/comments`);
+        });
+      }
+    },
+  ]);
 };
 
 /* Delete Permission. If the comment was posted:
