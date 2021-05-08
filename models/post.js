@@ -10,6 +10,9 @@ const PostSchema = new Schema(
     images: [String],
     timestamp: { type: Date, required: true },
     published: { type: Boolean, required: true },
+    category: [String],
+    ingredient: [String],
+    likes: { type: Number, default: 0 },
   },
 );
 

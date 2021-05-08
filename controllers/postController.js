@@ -26,6 +26,8 @@ exports.post_create_post = [
       images: req.body.images,
       timestamp: new Date(),
       published: req.body.published,
+      ingredient: req.body.ingredient,
+      category: req.body.category,
     });
 
     post.save((err) => {
@@ -35,26 +37,82 @@ exports.post_create_post = [
   },
 ];
 
+// Helper functions to filter / sort through the list of posts.
+const setFilters = (queries) => {
+  const filters = {};
+  const {
+    category, ingredient, author, search,
+  } = queries;
+  if (category) filters.category = queries.category;
+  if (ingredient) filters.ingredient = queries.ingredient;
+  if (author) filters.author = queries.author;
+  if (search) {
+    filters.$or = [
+      { title: { $regex: queries.search, $options: 'i' } },
+      { text: { $regex: queries.search, $options: 'i' } },
+    ];
+  }
+  return filters;
+};
+
+const setSort = (queries) => {
+  const { sort_by, order = 'desc' } = queries;
+  let sort;
+  switch (sort_by) {
+    case 'date':
+      sort = { timestamp: order };
+      break;
+    case 'alphabetical':
+      sort = { title: order };
+      break;
+    case 'popularity':
+      sort = { likes: order };
+      break;
+    default:
+      sort = { timestamp: order };
+  }
+  return sort;
+};
+
 // Read all posts
 exports.post_list = function (req, res, next) {
-  Post.find().sort({ timestamp: 'desc' })
-    .populate('author').exec((err, posts) => {
+  const filters = setFilters(req.query);
+  const sort = setSort(req.query);
+
+  // Set up pagination
+  const { page = 1, limit = 10 } = req.query;
+
+  // Search for the actual posts
+  Post
+    .find(filters)
+    .collation({ locale: 'en', strength: 2 }) // Ignore sensitivity for alphabetical sort
+    .sort(sort)
+    .limit(limit * 1)
+    .skip((page - 1) * limit)
+    .exec((err, posts) => {
       if (err) return next(err);
+      if (!posts) {
+        const error = new Error('There are no posts here.');
+        error.status = 404;
+        return next(err);
+      }
       res.json(posts);
     });
 };
 
 // Read a specific post
 exports.post_detail = function (req, res, next) {
-  Post.findById(req.params.postId).populate('author').exec((err, post) => {
-    if (err) return next(err);
-    if (typeof post === 'undefined') {
-      const error = new Error('Post not found.');
-      error.status = 404;
-      return next(error);
-    }
-    res.json(post);
-  });
+  Post.findById(req.params.postId)
+    .populate('author')
+    .exec((err, post) => {
+      if (err) return next(err);
+      if (typeof post === 'undefined') {
+        const error = new Error('Post not found.');
+        error.status = 404;
+        return next(error);
+      }
+      res.json(post);
+    });
 };
 
 // Update a post (PUT)
@@ -79,6 +137,8 @@ exports.post_update_put = [
       images: req.body.images,
       timestamp: new Date(),
       published: req.body.published,
+      ingredient: req.body.ingredient,
+      category: req.body.category,
       _id: req.params.postId,
     });
 
@@ -92,23 +152,26 @@ exports.post_update_put = [
 
 // Delete a post (POST)
 exports.post_delete = function (req, res, next) {
-  async.parallel([
-    function (callback) {
-      Post.findByIdAndRemove(req.params.postId, (err) => {
-        if (err) return next(err);
-        callback();
-      });
+  async.parallel(
+    [
+      function (callback) {
+        Post.findByIdAndRemove(req.params.postId, (err) => {
+          if (err) return next(err);
+          callback();
+        });
+      },
+      function (callback) {
+        Comment.deleteMany({ post: req.params.postId }, (err) => {
+          if (err) return next(err);
+          callback();
+        });
+      },
+    ],
+    (err) => {
+      if (err) return next(err);
+      res.redirect('/posts');
     },
-    function (callback) {
-      Comment.deleteMany({ post: req.params.postId }, (err) => {
-        if (err) return next(err);
-        callback();
-      });
-    },
-  ], (err) => {
-    if (err) return next(err);
-    res.redirect('/posts');
-  });
+  );
 };
 
 exports.check_author = function (req, res, next) {

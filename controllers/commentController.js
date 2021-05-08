@@ -88,10 +88,32 @@ exports.comment_reply_post = [
   },
 ];
 
+// Helper function to sort through list of comments.
+const setSort = (queries) => {
+  const { sort_by, order = 'desc' } = queries;
+  let sort;
+  switch (sort_by) {
+    case 'date':
+      sort = { timestamp: order };
+      break;
+    case 'popularity':
+      sort = { likes: order };
+      break;
+    default:
+      sort = { timestamp: order };
+  }
+  return sort;
+};
+
 // Read all comments from one post (GET)
 exports.comment_list = function (req, res, next) {
+  const sort = setSort(req.query);
+  const { page = 1, limit = 20 } = req.query;
+
   Comment.find({ post: req.params.postId })
-    .sort({ timestamp: 'desc' })
+    .sort(sort)
+    .limit(limit * 1)
+    .skip((page - 1) * limit)
     .exec((err, comments) => {
       if (err) return next(err);
       res.json(comments);
@@ -142,12 +164,44 @@ exports.comment_update_put = [
   },
 ];
 
-// Delete a comment (DELETE)
+/* Delete a comment (DELETE)
+- If the comment has children, change the text and author to [removed]
+- If the comment does not have children, remove the comment.
+*/
 exports.comment_delete = function (req, res, next) {
-  Comment.findByIdAndRemove(req.params.commentId, (err) => {
-    if (err) return next(err);
-    res.redirect(`/posts/${req.params.postId}`);
-  });
+  async.waterfall([
+    // Get the comment and send its children field
+    function (callback) {
+      Comment.findById(req.params.commentId).exec((err, comment) => {
+        if (err) return next(err);
+        if (!comment) {
+          const error = new Error('Comment not found.');
+          error.status = 404;
+          return next(error);
+        }
+        callback(null, comment.children);
+      });
+    },
+    function (children) {
+      // If the comment has no children, simply delete it.
+      if (children.length === 0) {
+        Comment.findByIdAndRemove(req.params.commentId, (err) => {
+          if (err) return next(err);
+          res.redirect(`/posts/${req.params.postId}/comments`);
+        });
+      } else {
+        // If the comment had children, keep the document but
+        // erase the text and author.
+        Comment.findByIdAndUpdate(req.params.commentId, {
+          username: '[removed]', content: '[removed]', account: undefined, deleted: true,
+        },
+        (err) => {
+          if (err) return next(err);
+          res.redirect(`/posts/${req.params.postId}/comments`);
+        });
+      }
+    },
+  ]);
 };
 
 /* Delete Permission. If the comment was posted:
