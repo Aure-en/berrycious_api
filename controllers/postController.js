@@ -1,4 +1,6 @@
 const async = require('async');
+const fs = require('fs');
+const path = require('path');
 const { body, validationResult } = require('express-validator');
 const Post = require('../models/post');
 const Comment = require('../models/comment');
@@ -19,16 +21,37 @@ exports.post_create_post = [
 
     // Data form is valid
     // Create the post with the data
-    const post = new Post({
+
+    const data = {
       author: req.user._id,
       title: req.body.title,
       text: req.body.text,
-      images: req.body.images,
       timestamp: new Date(),
       published: req.body.published,
       ingredient: req.body.ingredient,
       category: req.body.category,
-    });
+    };
+
+    // Add images if there are any
+    if (req.files) {
+      const images = [];
+      req.files.map((image) => {
+        // Push the image in images
+        images.push({
+          name: image.filename,
+          data: fs.readFileSync(path.join(__dirname, `../images/${image.filename}`)),
+          contentType: image.mimetype,
+        });
+
+        // Delete the image from the disk after using it
+        fs.unlink(path.join(__dirname, `../images/${image.filename}`), (err) => {
+          if (err) throw err;
+        });
+      });
+      data.images = images;
+    }
+
+    const post = new Post(data);
 
     post.save((err) => {
       if (err) return next(err);
@@ -129,17 +152,37 @@ exports.post_update_put = [
       return res.json({ errors: errors.array() });
     }
 
-    const post = new Post({
+    const data = {
       author: req.user._id,
       title: req.body.title,
       text: req.body.text,
-      images: req.body.images,
       timestamp: new Date(),
       published: req.body.published,
       ingredient: req.body.ingredient,
       category: req.body.category,
       _id: req.params.postId,
-    });
+    };
+
+    // Add images if there are any
+    if (req.files) {
+      const images = [];
+      req.files.map((image) => {
+        // Push the image in images
+        images.push({
+          name: image.filename,
+          data: fs.readFileSync(path.join(__dirname, `../images/${image.filename}`)),
+          contentType: image.mimetype,
+        });
+
+        // Delete the image from the disk after using it
+        fs.unlink(path.join(__dirname, `../images/${image.filename}`), (err) => {
+          if (err) throw err;
+        });
+      });
+      data.images = images;
+    }
+
+    const post = new Post(data);
 
     // Data is valid, update the post.
     Post.findByIdAndUpdate(req.params.postId, post, {}, (err) => {

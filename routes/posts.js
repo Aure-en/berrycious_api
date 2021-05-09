@@ -4,15 +4,16 @@ const passport = require('passport');
 const router = express.Router();
 const postController = require('../controllers/postController');
 const commentRouter = require('./comments');
+const upload = require('../middleware/upload');
 
 // GET posts homepage
 router.get('/', postController.post_list);
 
 // POST request to create a new post
-router.post('/', passport.authenticate('jwt', { session: false }), postController.post_create_post);
+router.post('/', passport.authenticate('jwt', { session: false }), upload, postController.post_create_post);
 
 // GET request to update a post
-router.get('/:postId/edit', passport.authenticate('jwt', { session: false }), postController.post_detail);
+router.get('/:postId/edit', passport.authenticate('jwt', { session: false }), upload, postController.post_detail);
 
 // PUT request to update a post
 router.put(

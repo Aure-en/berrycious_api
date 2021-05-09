@@ -19,9 +19,14 @@ exports.auth_login_post = [
     passport.authenticate('local', { session: false }, (err, user, info) => {
       if (err) return next(err);
       if (!user) {
-        const error = new Error('This user does not exist.');
-        error.status = 404;
-        return next(err);
+        return res.json({
+          errors: [{
+            value: '',
+            param: 'response',
+            location: 'body',
+            msg: 'This user does not exist.',
+          }],
+        });
       }
       req.login(user, { session: false }, (err) => {
         if (err) res.send(err);
@@ -41,7 +46,7 @@ exports.auth_signup_post = [
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      res.json(errors);
+      return res.json(errors);
     }
     next();
   },
@@ -51,7 +56,7 @@ exports.auth_signup_post = [
     User.findOne({ username: req.body.username }).exec((err, user) => {
       if (err) return next(err);
       if (user) {
-        res.json({
+        return res.json({
           errors: [
             {
               value: '',
