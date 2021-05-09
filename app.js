@@ -4,6 +4,8 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
+const compression = require('compression');
+const helmet = require('helmet');
 const mongoose = require('mongoose');
 require('dotenv').config({ path: path.resolve(__dirname, '.env.local') });
 require('./auth/passport');
@@ -26,11 +28,13 @@ mongoose.set('useFindAndModify', false);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+app.use(helmet());
 app.use(cors());
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(compression());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);

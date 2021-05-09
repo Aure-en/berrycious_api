@@ -43,3 +43,13 @@ exports.user_drafts = function (req, res, next) {
     return res.json(posts);
   });
 };
+
+// Check draft access permission
+// Users can only access their own drafts
+exports.check_draft_permission = function (req, res, next) {
+  if (req.user._id !== req.params.userId) {
+    res.status(403).send('Sorry, users may only see their own drafts.');
+  } else {
+    next();
+  }
+};
