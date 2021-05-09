@@ -24,8 +24,22 @@ exports.user_detail = function (req, res, next) {
 
 // Get all posts from a user
 exports.user_posts = function (req, res, next) {
-  Post.find({ author: req.params.userId }).exec((err, posts) => {
+  Post.find({ author: req.params.userId, published: true }).exec((err, posts) => {
+    if (typeof posts === 'undefined') {
+      res.send('This user has no posts.');
+    }
     if (err) return next(err);
-    res.json(posts);
+    return res.json(posts);
+  });
+};
+
+// Get a user drafts
+exports.user_drafts = function (req, res, next) {
+  Post.find({ author: req.params.userId, published: false }).exec((err, posts) => {
+    if (err) return next(err);
+    if (typeof posts === 'undefined') {
+      res.send('There are no drafts here.');
+    }
+    return res.json(posts);
   });
 };

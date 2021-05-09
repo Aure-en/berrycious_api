@@ -39,7 +39,7 @@ exports.post_create_post = [
 
 // Helper functions to filter / sort through the list of posts.
 const setFilters = (queries) => {
-  const filters = {};
+  const filters = { published: 'true' };
   const {
     category, ingredient, author, search,
   } = queries;

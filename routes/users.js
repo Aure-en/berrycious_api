@@ -6,8 +6,11 @@ const userController = require('../controllers/userController');
 // GET list of users
 router.get('/', userController.user_list);
 
-// GET user posts
+// GET user published posts
 router.get('/:userId/posts', userController.user_posts);
+
+// GET user drafts
+router.get('/:userId/drafts', userController.user_drafts);
 
 // GET user detail
 router.get('/:userId', userController.user_detail);

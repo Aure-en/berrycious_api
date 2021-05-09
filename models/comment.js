@@ -11,7 +11,6 @@ const CommentSchema = new Schema(
     parent: { type: Schema.Types.ObjectId, ref: 'Comment' },
     children: [{ type: Schema.Types.ObjectId, ref: 'Comment' }],
     account: { type: Schema.Types.ObjectId, ref: 'User' },
-    likes: { type: Number, default: 0 },
     deleted: Boolean,
   },
 );

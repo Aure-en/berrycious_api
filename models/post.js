@@ -12,7 +12,6 @@ const PostSchema = new Schema(
     published: { type: Boolean, required: true },
     category: [String],
     ingredient: [String],
-    likes: { type: Number, default: 0 },
   },
 );
 
