@@ -21,6 +21,15 @@ exports.post_create_post = [
     // Data form is valid
     // Create the post with the data
 
+    // Convert ingredient and category to arrays if they aren't array
+    if (req.body.ingredient && !(req.body.ingredient instanceof Array)) {
+      req.body.ingredient = new Array(req.body.ingredient);
+    }
+
+    if (req.body.category && !(req.body.category instanceof Array)) {
+      req.body.category = new Array(req.body.category);
+    }
+
     const data = {
       author: req.user._id,
       title: req.body.title,

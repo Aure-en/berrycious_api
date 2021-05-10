@@ -1,3 +1,4 @@
+const async = require('async');
 const { body, validationResult } = require('express-validator');
 const Category = require('../models/category');
 const Post = require('../models/post');
@@ -129,7 +130,22 @@ exports.category_update_put = [
 
 // Delete a category (DELETE)
 exports.category_delete = function (req, res, next) {
-  Category.findByIdAndDelete(req.params.categoryId).exec((err) => {
+  async.parallel([
+    // Delete the category from the posts
+    function(callback) {
+      Post
+        .updateMany(
+          { category: req.params.categoryId },
+          { $pull: { category: req.params.categoryId } }
+        )
+        .exec(callback);
+    },
+
+    // Delete the category itself
+    function (callback) {
+      Category.findByIdAndDelete(req.params.categoryId).exec(callback);
+    },
+  ], (err) => {
     if (err) return next(err);
     res.redirect('/categories');
   });

@@ -1,12 +1,13 @@
+const async = require('async');
 const { body, validationResult } = require('express-validator');
 const Ingredient = require('../models/ingredient');
 const Post = require('../models/post');
 
-// Send list of all categories (GET)
+// Send list of all ingredients (GET)
 exports.ingredient_list = function (req, res, next) {
-  Ingredient.find().sort({ name: 'asc' }).exec((err, categories) => {
+  Ingredient.find().sort({ name: 'asc' }).exec((err, ingredients) => {
     if (err) return next(err);
-    return res.json(categories);
+    return res.json(ingredients);
   });
 };
 
@@ -129,8 +130,23 @@ exports.ingredient_update_put = [
 
 // Delete a ingredient (DELETE)
 exports.ingredient_delete = function (req, res, next) {
-  Ingredient.findByIdAndDelete(req.params.ingredientId).exec((err) => {
+  async.parallel([
+    // Delete the ingredient from the posts
+    function(callback) {
+      Post
+        .updateMany(
+          { ingredient: req.params.ingredientId },
+          { $pull: { ingredient: req.params.ingredientId } }
+        )
+        .exec(callback);
+    },
+
+    // Delete the ingredient itself
+    function (callback) {
+      Ingredient.findByIdAndDelete(req.params.ingredientId).exec(callback);
+    },
+  ], (err) => {
     if (err) return next(err);
-    res.redirect('/categories');
+    res.redirect('/ingredients');
   });
 };
