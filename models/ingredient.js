@@ -14,4 +14,4 @@ IngredientSchema.virtual('url').get(function () {
   return `/ingredients/${this._id}`;
 });
 
-module.exports = mongoose.model('Genre', IngredientSchema);
+module.exports = mongoose.model('Ingredient', IngredientSchema);
