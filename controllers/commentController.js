@@ -145,7 +145,7 @@ exports.comment_update_put = [
 
     if (!errors.isEmpty()) {
       // There are errors. Send them.
-      res.json({ errors: errors.array() });
+      return res.json({ errors: errors.array() });
     }
 
     const comment = new Comment({
@@ -159,7 +159,7 @@ exports.comment_update_put = [
     // Data is valid, update the comment.
     Comment.findByIdAndUpdate(req.params.commentId, comment, {}, (err) => {
       if (err) return next(err);
-      res.redirect(comment.url);
+      return res.redirect(comment.url);
     });
   },
 ];

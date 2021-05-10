@@ -15,8 +15,7 @@ exports.post_create_post = [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       // There are errors. Send errors.
-      res.json({ errors: errors.array() });
-      return;
+      return res.json({ errors: errors.array() });
     }
 
     // Data form is valid
