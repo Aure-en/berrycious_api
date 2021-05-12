@@ -10,15 +10,18 @@ const upload = require('../middleware/upload');
 router.get('/', postController.post_list);
 
 // POST request to create a new post
-router.post('/', passport.authenticate('jwt', { session: false }), upload, postController.post_create_post);
-
-// GET request to update a post
-router.get('/:postId/edit', passport.authenticate('jwt', { session: false }), upload, postController.post_detail);
+router.post(
+  '/',
+  passport.authenticate('jwt', { session: false }),
+  upload,
+  postController.post_create_post,
+);
 
 // PUT request to update a post
 router.put(
   '/:postId',
   passport.authenticate('jwt', { session: false }),
+  upload,
   postController.check_author,
   postController.post_update_put,
 );

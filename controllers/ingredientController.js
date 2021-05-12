@@ -12,11 +12,10 @@ exports.ingredient_list = function (req, res, next) {
 };
 
 // Send the ingredient details (GET)
-exports.ingredient_detail = function (req, res, next) {
+exports.ingredient_detail = function (req, res) {
   Ingredient.findById(req.params.ingredientId).exec((err, ingredient) => {
-    if (err) return next(err);
     if (!ingredient) {
-      return res.send('ingredient not found');
+      return res.send('Ingredient not found.');
     }
     return res.json(ingredient);
   });
@@ -105,9 +104,10 @@ exports.ingredient_create_post = [
 // Update a ingredient (PUT)
 exports.ingredient_update_put = [
   // Validation
-  body('name', 'Genre name required').trim().isLength({ min: 1 }),
+  body('name', 'Ingredient name required').trim().isLength({ min: 1 }),
 
   (req, res, next) => {
+    console.log(req.body, req.params.ingredientId);
     // check for errors
     const errors = validationResult(req);
     // There are errors. Send them.
@@ -121,9 +121,11 @@ exports.ingredient_update_put = [
       _id: req.params.ingredientId,
     });
 
-    Ingredient.findByIdAndUpdate(req.params.ingredientId, ingredient, {}, (err) => {
+    Ingredient.findByIdAndUpdate(req.params.ingredientId, ingredient, {}).exec((err) => {
       if (err) return next(err);
-      res.redirect(ingredient.url);
+      // Use 303 status to redirect to GET...
+      // Otherwise, it infinitely makes PUT requests.
+      return res.redirect(303, ingredient.url);
     });
   },
 ];
@@ -136,7 +138,7 @@ exports.ingredient_delete = function (req, res, next) {
       Post
         .updateMany(
           { ingredient: req.params.ingredientId },
-          { $pull: { ingredient: req.params.ingredientId } }
+          { $pull: { ingredient: req.params.ingredientId } },
         )
         .exec(callback);
     },
@@ -147,6 +149,6 @@ exports.ingredient_delete = function (req, res, next) {
     },
   ], (err) => {
     if (err) return next(err);
-    res.redirect('/ingredients');
+    res.redirect(303, '/ingredients');
   });
 };

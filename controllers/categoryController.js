@@ -123,7 +123,9 @@ exports.category_update_put = [
 
     Category.findByIdAndUpdate(req.params.categoryId, category, {}, (err) => {
       if (err) return next(err);
-      res.redirect(category.url);
+      // Use 303 status to redirect to GET.
+      // Otherwise, it infinitely makes PUT requests.
+      res.redirect(303, category.url);
     });
   },
 ];

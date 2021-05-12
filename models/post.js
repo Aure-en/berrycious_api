@@ -7,7 +7,11 @@ const PostSchema = new Schema(
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String, required: true },
     text: { type: String, required: true },
-    images: [String],
+    images: [{
+      name: String,
+      data: Buffer,
+      contentType: String,
+    }],
     timestamp: { type: Date, required: true },
     published: { type: Boolean, required: true },
     category: [{ type: Schema.Types.ObjectId, ref: 'Category' }],

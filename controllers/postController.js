@@ -10,6 +10,8 @@ exports.post_create_post = [
   // Validation
   body('title', 'Title must be specified.').trim().isLength({ min: 1 }),
   body('text', 'Text must be specified.').trim().isLength({ min: 1 }),
+  body('published', 'Post must be private or public').isBoolean(),
+  body('ingredient.*'),
 
   (req, res, next) => {
     const errors = validationResult(req);
@@ -70,7 +72,7 @@ exports.post_create_post = [
 
 // Helper functions to filter / sort through the list of posts.
 const setFilters = (queries) => {
-  const filters = { published: 'true' };
+  const filters = { published: true };
   const {
     category, ingredient, author, search,
   } = queries;
@@ -132,17 +134,14 @@ exports.post_list = function (req, res, next) {
 };
 
 // Read a specific post
-exports.post_detail = function (req, res, next) {
+exports.post_detail = function (req, res) {
   Post.findById(req.params.postId)
-    .populate('author')
+    .populate('author', 'username _id')
     .exec((err, post) => {
-      if (err) return next(err);
       if (typeof post === 'undefined') {
-        const error = new Error('Post not found.');
-        error.status = 404;
-        return next(error);
+        return res.send('Post not found.');
       }
-      res.json(post);
+      return res.json(post);
     });
 };
 
@@ -195,7 +194,9 @@ exports.post_update_put = [
     // Data is valid, update the post.
     Post.findByIdAndUpdate(req.params.postId, post, {}, (err) => {
       if (err) return next(err);
-      res.redirect(post.url);
+      // Use 303 status to redirect to GET.
+      // Otherwise, it infinitely makes PUT requests.
+      return res.redirect(303, post.url);
     });
   },
 ];
@@ -228,9 +229,7 @@ exports.check_author = function (req, res, next) {
   Post.findById(req.params.postId).exec((err, post) => {
     if (err) return next(err);
     if (typeof post === 'undefined') {
-      const error = new Error('Post not found.');
-      error.status = 404;
-      return next(error);
+      return res.send('Post not found.');
     }
     if (req.user._id !== post.author.toString()) {
       res.status(403).send('Sorry, only the author may modify the post.');

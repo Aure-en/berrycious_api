@@ -159,7 +159,9 @@ exports.comment_update_put = [
     // Data is valid, update the comment.
     Comment.findByIdAndUpdate(req.params.commentId, comment, {}, (err) => {
       if (err) return next(err);
-      return res.redirect(comment.url);
+      // Use 303 status to redirect to GET...
+      // Otherwise, it infinitely makes PUT requests.
+      return res.redirect(303, comment.url);
     });
   },
 ];
