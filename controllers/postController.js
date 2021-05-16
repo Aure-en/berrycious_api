@@ -41,6 +41,9 @@ exports.post_create_post = [
       published: req.body.published,
       ingredient: req.body.ingredient,
       category: req.body.category,
+      prep_time: req.body.prep_time,
+      cook_time: req.body.cook_time,
+      serves: req.body.serves,
     };
 
     // Add images if there are any
@@ -169,6 +172,9 @@ exports.post_update_put = [
       published: req.body.published,
       ingredient: req.body.ingredient,
       category: req.body.category,
+      prep_time: req.body.prep_time,
+      cook_time: req.body.cook_time,
+      serves: req.body.serves,
       _id: req.params.postId,
     };
 

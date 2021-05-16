@@ -13,6 +13,9 @@ const PostSchema = new Schema(
       data: Buffer,
       contentType: String,
     }],
+    prep_time: String,
+    cook_time: String,
+    serves: String,
     timestamp: { type: Date, required: true },
     published: { type: Boolean, required: true },
     category: [{ type: Schema.Types.ObjectId, ref: 'Category' }],
@@ -22,6 +25,10 @@ const PostSchema = new Schema(
 
 PostSchema.virtual('url').get(function () {
   return `/posts/${this._id}`;
+});
+
+PostSchema.virtual('total_time').get(function () {
+  return this.prep_time + this.cook_time;
 });
 
 module.exports = mongoose.model('Post', PostSchema);
