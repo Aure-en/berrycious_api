@@ -73,7 +73,7 @@ exports.ingredient_create_post = [
 
   // Check if the ingredient name is already taken
   (req, res, next) => {
-    Ingredient.findOne({ name: req.body.name }).exec((err, ingredient) => {
+    Ingredient.findOne({ name: new RegExp(`^${req.params.name}$`, 'i') }).exec((err, ingredient) => {
       if (err) return next(err);
       if (ingredient) {
         return res.json({
@@ -107,7 +107,6 @@ exports.ingredient_update_put = [
   body('name', 'Ingredient name required').trim().isLength({ min: 1 }),
 
   (req, res, next) => {
-    console.log(req.body, req.params.ingredientId);
     // check for errors
     const errors = validationResult(req);
     // There are errors. Send them.

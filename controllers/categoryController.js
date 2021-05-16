@@ -13,13 +13,14 @@ exports.category_list = function (req, res, next) {
 
 // Send the category details (GET)
 exports.category_detail = function (req, res, next) {
-  Category.findById(req.params.categoryId).exec((err, category) => {
-    if (err) return next(err);
-    if (!category) {
-      return res.send('Category not found');
-    }
-    return res.json(category);
-  });
+  Category.findOne({ name: new RegExp(`^${req.params.categoryName}$`, 'i') })
+    .exec((err, category) => {
+      if (err) return next(err);
+      if (!category) {
+        return res.send('Category not found');
+      }
+      return res.json(category);
+    });
 };
 
 const setSort = (queries) => {
@@ -97,7 +98,7 @@ exports.category_create_post = [
     const category = new Category({ name: req.body.name });
     category.save((err) => {
       if (err) return next(err);
-      return res.redirect(category.url);
+      return res.redirect(303, category.url);
     });
   },
 ];
@@ -134,11 +135,11 @@ exports.category_update_put = [
 exports.category_delete = function (req, res, next) {
   async.parallel([
     // Delete the category from the posts
-    function(callback) {
+    function (callback) {
       Post
         .updateMany(
           { category: req.params.categoryId },
-          { $pull: { category: req.params.categoryId } }
+          { $pull: { category: req.params.categoryId } },
         )
         .exec(callback);
     },
@@ -149,6 +150,6 @@ exports.category_delete = function (req, res, next) {
     },
   ], (err) => {
     if (err) return next(err);
-    res.redirect('/categories');
+    res.redirect(303, '/categories');
   });
 };

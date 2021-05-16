@@ -35,6 +35,7 @@ exports.post_create_post = [
     const data = {
       author: req.user._id,
       title: req.body.title,
+      description: req.body.description,
       text: req.body.text,
       timestamp: new Date(),
       published: req.body.published,
@@ -162,6 +163,7 @@ exports.post_update_put = [
     const data = {
       author: req.user._id,
       title: req.body.title,
+      description: req.body.description,
       text: req.body.text,
       timestamp: new Date(),
       published: req.body.published,
@@ -206,21 +208,15 @@ exports.post_delete = function (req, res, next) {
   async.parallel(
     [
       function (callback) {
-        Post.findByIdAndRemove(req.params.postId, (err) => {
-          if (err) return next(err);
-          callback();
-        });
+        Post.findByIdAndRemove(req.params.postId).exec(callback);
       },
       function (callback) {
-        Comment.deleteMany({ post: req.params.postId }, (err) => {
-          if (err) return next(err);
-          callback();
-        });
+        Comment.deleteMany({ post: req.params.postId }).exec(callback);
       },
     ],
     (err) => {
       if (err) return next(err);
-      res.redirect('/posts');
+      res.redirect(303, '/posts');
     },
   );
 };

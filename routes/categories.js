@@ -32,6 +32,6 @@ router.delete(
 );
 
 // GET request for a specific category details
-router.get('/:categoryId', categoryController.category_detail);
+router.get('/:categoryName', categoryController.category_detail);
 
 module.exports = router;

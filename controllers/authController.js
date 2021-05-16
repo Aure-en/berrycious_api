@@ -24,7 +24,7 @@ exports.auth_login_post = [
             value: '',
             param: 'response',
             location: 'body',
-            msg: 'This user does not exist.',
+            msg: info.message,
           }],
         });
       }
