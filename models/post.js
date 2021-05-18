@@ -27,8 +27,4 @@ PostSchema.virtual('url').get(function () {
   return `/posts/${this._id}`;
 });
 
-PostSchema.virtual('total_time').get(function () {
-  return this.prep_time + this.cook_time;
-});
-
 module.exports = mongoose.model('Post', PostSchema);

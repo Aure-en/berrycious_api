@@ -112,7 +112,6 @@ exports.comment_list = function (req, res, next) {
   const { page = 1, limit = 20 } = req.query;
 
   Comment.find({ post: req.params.postId })
-    .populate('children')
     .sort(sort)
     .limit(limit * 1)
     .skip((page - 1) * limit)

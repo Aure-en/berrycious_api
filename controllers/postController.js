@@ -179,7 +179,7 @@ exports.post_update_put = [
     };
 
     // Add images if there are any
-    if (req.files) {
+    if (req.files.length > 0) {
       const images = [];
       req.files.map((image) => {
         // Push the image in images
@@ -197,10 +197,8 @@ exports.post_update_put = [
       data.images = images;
     }
 
-    const post = new Post(data);
-
     // Data is valid, update the post.
-    Post.findByIdAndUpdate(req.params.postId, post, {}, (err) => {
+    Post.findByIdAndUpdate(req.params.postId, { $set: data }, {}, (err, post) => {
       if (err) return next(err);
       // Use 303 status to redirect to GET.
       // Otherwise, it infinitely makes PUT requests.
