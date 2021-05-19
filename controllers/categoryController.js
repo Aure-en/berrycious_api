@@ -13,7 +13,7 @@ exports.category_list = function (req, res, next) {
 
 // Send the category details (GET)
 exports.category_detail = function (req, res, next) {
-  Category.findOne({ name: req.params.categoryName })
+  Category.findOne({ name: new RegExp(`^${req.params.categoryName}$`, 'i') })
     .exec((err, category) => {
       if (err) return next(err);
       if (!category) {
