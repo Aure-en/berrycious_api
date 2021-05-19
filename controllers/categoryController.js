@@ -13,7 +13,7 @@ exports.category_list = function (req, res, next) {
 
 // Send the category details (GET)
 exports.category_detail = function (req, res, next) {
-  Category.findOne({ name: new RegExp(`^${req.params.categoryName}$`, 'i') })
+  Category.findOne({ name: req.params.categoryName })
     .exec((err, category) => {
       if (err) return next(err);
       if (!category) {
@@ -95,7 +95,7 @@ exports.category_create_post = [
 
   // Everything is fine. Save the category.
   (req, res, next) => {
-    const category = new Category({ name: req.body.name });
+    const category = new Category({ name: req.body.name, description: req.body.description });
     category.save((err) => {
       if (err) return next(err);
       return res.redirect(303, category.url);
@@ -119,6 +119,7 @@ exports.category_update_put = [
     // Data is valid. Update the category.
     const category = new Category({
       name: req.body.name,
+      description: req.body.description,
       _id: req.params.categoryId,
     });
 
