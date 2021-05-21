@@ -2,6 +2,7 @@ const async = require('async');
 const { body, validationResult } = require('express-validator');
 const Category = require('../models/category');
 const Post = require('../models/post');
+const utils = require('../utils/functions');
 
 // Send list of all categories (GET)
 exports.category_list = function (req, res, next) {
@@ -17,45 +18,34 @@ exports.category_detail = function (req, res, next) {
     .exec((err, category) => {
       if (err) return next(err);
       if (!category) {
-        return res.send('Category not found');
+        return res.json({ error: 'Category not found.' });
       }
       return res.json(category);
     });
 };
 
-const setSort = (queries) => {
-  const { sort_by, order = 'desc' } = queries;
-  let sort;
-  switch (sort_by) {
-    case 'date':
-      sort = { timestamp: order };
-      break;
-    case 'alphabetical':
-      sort = { title: order };
-      break;
-    case 'popularity':
-      sort = { likes: order };
-      break;
-    default:
-      sort = { timestamp: order };
-  }
-  return sort;
-};
-
 // Send all posts in this category (GET)
 exports.category_posts = function (req, res, next) {
-  const sort = setSort(req.query);
+  const sort = utils.setSort(req.query);
   const { page = 1, limit = 10 } = req.query;
-  Post
-    .find({ category: req.params.categoryId })
-    .collation({ locale: 'en', strength: 2 })
-    .sort(sort)
-    .limit(limit * 1)
-    .skip((page - 1) * limit)
-    .exec((err, posts) => {
-      if (err) return next(err);
-      res.json(posts);
-    });
+  async.parallel({
+    posts(callback) {
+      Post
+        .find({ category: req.params.categoryId })
+        .collation({ locale: 'en', strength: 2 })
+        .sort(sort)
+        .limit(limit * 1)
+        .skip((page - 1) * limit)
+        .exec(callback);
+    },
+    count(callback) {
+      Post.countDocuments({ category: req.params.categoryId }).exec(callback);
+    },
+  }, (err, results) => {
+    if (err) return next(err);
+    res.set('count', results.count);
+    return res.json(results.posts);
+  });
 };
 
 // Create a category (POST)

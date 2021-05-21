@@ -2,6 +2,8 @@ const async = require('async');
 const { body, validationResult } = require('express-validator');
 const Ingredient = require('../models/ingredient');
 const Post = require('../models/post');
+const utils = require('../utils/functions');
+
 
 // Send list of all ingredients (GET)
 exports.ingredient_list = function (req, res, next) {
@@ -12,8 +14,9 @@ exports.ingredient_list = function (req, res, next) {
 };
 
 // Send the ingredient details (GET)
-exports.ingredient_detail = function (req, res) {
-  Ingredient.findById(req.params.ingredientId).exec((err, ingredient) => {
+exports.ingredient_detail = function (req, res, next) {
+  Ingredient.findOne({ name: new RegExp(`^${req.params.ingredientName}$`, 'i') }).exec((err, ingredient) => {
+    if (err) return next(err);
     if (!ingredient) {
       return res.send('Ingredient not found.');
     }
@@ -21,39 +24,28 @@ exports.ingredient_detail = function (req, res) {
   });
 };
 
-const setSort = (queries) => {
-  const { sort_by, order = 'desc' } = queries;
-  let sort;
-  switch (sort_by) {
-    case 'date':
-      sort = { timestamp: order };
-      break;
-    case 'alphabetical':
-      sort = { title: order };
-      break;
-    case 'popularity':
-      sort = { likes: order };
-      break;
-    default:
-      sort = { timestamp: order };
-  }
-  return sort;
-};
-
 // Send all posts in this ingredient (GET)
 exports.ingredient_posts = function (req, res, next) {
-  const sort = setSort(req.query);
+  const sort = utils.setSort(req.query);
   const { page = 1, limit = 10 } = req.query;
-  Post
-    .find({ ingredient: req.params.ingredientId })
-    .collation({ locale: 'en', strength: 2 })
-    .sort(sort)
-    .limit(limit * 1)
-    .skip((page - 1) * limit)
-    .exec((err, posts) => {
-      if (err) return next(err);
-      res.json(posts);
-    });
+  async.parallel({
+    posts(callback) {
+      Post
+        .find({ ingredient: req.params.ingredientId })
+        .collation({ locale: 'en', strength: 2 })
+        .sort(sort)
+        .limit(limit * 1)
+        .skip((page - 1) * limit)
+        .exec(callback);
+    },
+    count(callback) {
+      Post.countDocuments({ ingredient: req.params.ingredientId }).exec(callback);
+    },
+  }, (err, results) => {
+    if (err) return next(err);
+    res.set('count', results.count);
+    return res.json(results.posts);
+  });
 };
 
 // Create a ingredient (POST)
@@ -133,7 +125,7 @@ exports.ingredient_update_put = [
 exports.ingredient_delete = function (req, res, next) {
   async.parallel([
     // Delete the ingredient from the posts
-    function(callback) {
+    function (callback) {
       Post
         .updateMany(
           { ingredient: req.params.ingredientId },

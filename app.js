@@ -31,7 +31,9 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  exposedHeaders: ['count'],
+}));
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

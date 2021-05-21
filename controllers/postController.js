@@ -4,6 +4,7 @@ const path = require('path');
 const { body, validationResult } = require('express-validator');
 const Post = require('../models/post');
 const Comment = require('../models/comment');
+const utils = require('../utils/functions');
 
 // Create a post (POST)
 exports.post_create_post = [
@@ -74,67 +75,35 @@ exports.post_create_post = [
   },
 ];
 
-// Helper functions to filter / sort through the list of posts.
-const setFilters = (queries) => {
-  const filters = { published: true };
-  const {
-    category, ingredient, author, search,
-  } = queries;
-  if (category) filters.category = queries.category;
-  if (ingredient) filters.ingredient = queries.ingredient;
-  if (author) filters.author = queries.author;
-  if (search) {
-    filters.$or = [
-      { title: { $regex: queries.search, $options: 'i' } },
-      { text: { $regex: queries.search, $options: 'i' } },
-    ];
-  }
-  return filters;
-};
-
-const setSort = (queries) => {
-  const { sort_by, order = 'desc' } = queries;
-  let sort;
-  switch (sort_by) {
-    case 'date':
-      sort = { timestamp: order };
-      break;
-    case 'alphabetical':
-      sort = { title: order };
-      break;
-    case 'popularity':
-      sort = { likes: order };
-      break;
-    default:
-      sort = { timestamp: order };
-  }
-  return sort;
-};
-
 // Read all posts
 exports.post_list = function (req, res, next) {
-  const filters = setFilters(req.query);
-  const sort = setSort(req.query);
+  const filters = utils.setFilters(req.query);
+  const sort = utils.setSort(req.query);
 
   // Set up pagination
   const { page = 1, limit = 10 } = req.query;
 
-  // Search for the actual posts
-  Post
-    .find(filters)
-    .collation({ locale: 'en', strength: 2 }) // Ignore sensitivity for alphabetical sort
-    .sort(sort)
-    .limit(limit * 1)
-    .skip((page - 1) * limit)
-    .exec((err, posts) => {
-      if (err) return next(err);
-      if (!posts) {
-        const error = new Error('There are no posts here.');
-        error.status = 404;
-        return next(err);
-      }
-      res.json(posts);
-    });
+  // Search for the actual posts and the number of posts
+  async.parallel({
+    posts(callback) {
+      Post
+        .find(filters)
+        .collation({ locale: 'en', strength: 2 }) // Ignore sensitivity for alphabetical sort
+        .sort(sort)
+        .limit(limit * 1)
+        .skip((page - 1) * limit)
+        .exec(callback);
+    },
+    count(callback) {
+      Post
+        .countDocuments(filters)
+        .exec(callback);
+    },
+  }, (err, results) => {
+    if (err) return next(err);
+    res.set('count', results.count);
+    return res.json(results.posts);
+  });
 };
 
 // Read a specific post
@@ -143,7 +112,7 @@ exports.post_detail = function (req, res) {
     .populate('author', 'username _id')
     .exec((err, post) => {
       if (typeof post === 'undefined') {
-        return res.send('Post not found.');
+        return res.json({ error: 'Post not found.' });
       }
       return res.json(post);
     });
@@ -229,7 +198,7 @@ exports.check_author = function (req, res, next) {
   Post.findById(req.params.postId).exec((err, post) => {
     if (err) return next(err);
     if (typeof post === 'undefined') {
-      return res.send('Post not found.');
+      return res.json({ error: 'Post not found.' });
     }
     if (req.user._id !== post.author.toString()) {
       res.status(403).send('Sorry, only the author may modify the post.');
