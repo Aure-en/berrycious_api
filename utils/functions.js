@@ -3,9 +3,11 @@ exports.setFilters = (queries) => {
   const {
     category, ingredient, author, search,
   } = queries;
-  if (category) filters.category = queries.category;
+  if (category) {
+    filters.category = { $all: queries.category.split(',') };
+  }
   if (ingredient) {
-    filters.ingredient = { $all: queries.ingredients.split(',') };
+    filters.ingredient = { $all: queries.ingredient.split(',') };
   }
   if (author) filters.author = queries.author;
   if (search) {
