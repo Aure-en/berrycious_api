@@ -194,6 +194,8 @@ exports.post_delete = function (req, res, next) {
   );
 };
 
+// Wrote this when I was considering allowing several users to post,
+// but I decided to make this a 1-person blog only for now.
 exports.check_author = function (req, res, next) {
   Post.findById(req.params.postId).exec((err, post) => {
     if (err) return next(err);

@@ -1,8 +1,8 @@
 const express = require('express');
 const passport = require('passport');
+const ingredientController = require('../controllers/ingredientController');
 
 const router = express.Router();
-const ingredientController = require('../controllers/ingredientController');
 
 // GET categories homepage (all categories)
 router.get('/', ingredientController.ingredient_list);

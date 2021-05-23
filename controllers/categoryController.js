@@ -51,7 +51,7 @@ exports.category_posts = function (req, res, next) {
 // Create a category (POST)
 exports.category_create_post = [
   // Validation
-  body('name', 'Genre name required').trim().isLength({ min: 1 }),
+  body('name', 'Name must be specified.').trim().isLength({ min: 1 }),
 
   // Check for errors
   (req, res, next) => {
