@@ -12,3 +12,4 @@ Lettuce Eat is a Recipes Blog API that allows an user to share recipes. Readers 
 - Messages may be sent to the blogger by any reader.
 - Posts can be sorted by date or alphabetical order (ascending or descending)
 - Posts can be filtered depending on the ingredients it contains, or the type of recipe.
+- Simple pagination for posts.
