@@ -87,7 +87,7 @@ exports.post_list = function (req, res, next) {
   async.parallel({
     posts(callback) {
       Post
-        .find(filters)
+        .find(filters, 'title description images')
         .collation({ locale: 'en', strength: 2 }) // Ignore sensitivity for alphabetical sort
         .sort(sort)
         .limit(limit * 1)

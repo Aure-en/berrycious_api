@@ -15,4 +15,4 @@ MessageSchema.virtual('url').get(function () {
   return `/messages/${this._id}`;
 });
 
-module.exports = mongoose.model('Category', MessageSchema);
+module.exports = mongoose.model('Message', MessageSchema);
