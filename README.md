@@ -3,7 +3,7 @@
 [Lettuce Eat - View site](https://aure-en.github.io/lettuce_eat/)
 
 ## Description
-Lettuce Eat is a Recipes Blog API that allows an user to share recipes. Readers might comment, and send messages to the blogger. It is a project realized as The Odin Project's [Blog API Project](https://www.theodinproject.com/paths/full-stack-javascript/courses/nodejs/lessons/blog-api).
+Lettuce Eat is a Recipes Blog API made with Express and MongoDB that allows an user to share recipes. Readers might comment, and send messages to the blogger. It is a project realized as The Odin Project's [Blog API Project](https://www.theodinproject.com/paths/full-stack-javascript/courses/nodejs/lessons/blog-api).
 
 ## Features
 - Authentification (with JWT and Passport) is used to restrict permissions to anyone who is not the blogger.
