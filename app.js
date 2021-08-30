@@ -19,6 +19,7 @@ const ingredientRouter = require('./routes/ingredients');
 const messageRouter = require('./routes/messages');
 
 const app = express();
+const httpServer = require('http').createServer(app);
 
 // Set up mongoose
 const mongoDB = `mongodb+srv://Aureen:${process.env.MONGODB_PASSWORD}@lettuceat.iqrxt.mongodb.net/lettuce_eat?retryWrites=true&w=majority`;
@@ -65,5 +66,8 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500);
   res.json(err);
 });
+
+const PORT = process.env.PORT || '3000';
+httpServer.listen(PORT, () => console.log(`Listening on port ${PORT}.`));
 
 module.exports = app;

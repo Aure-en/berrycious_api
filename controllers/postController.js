@@ -1,8 +1,10 @@
 const async = require('async');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 const { body, validationResult } = require('express-validator');
 const Post = require('../models/post');
+const File = require('../models/file');
 const Comment = require('../models/comment');
 const utils = require('../utils/functions');
 
@@ -48,20 +50,25 @@ exports.post_create_post = [
     };
 
     // Add images if there are any
-    if (req.files) {
+    if (req.images) {
       const images = [];
-      req.files.map((image) => {
+      req.images.map((image) => {
         // Push the image in images
         images.push({
           name: image.filename,
-          data: fs.readFileSync(path.join(__dirname, `../images/${image.filename}`)),
+          data: fs.readimagesync(
+            path.join(__dirname, `../images/${image.filename}`),
+          ),
           contentType: image.mimetype,
         });
 
         // Delete the image from the disk after using it
-        fs.unlink(path.join(__dirname, `../images/${image.filename}`), (err) => {
-          if (err) throw err;
-        });
+        fs.unlink(
+          path.join(__dirname, `../images/${image.filename}`),
+          (err) => {
+            if (err) throw err;
+          },
+        );
       });
       data.images = images;
     }
@@ -84,32 +91,34 @@ exports.post_list = function (req, res, next) {
   const { page = 1, limit = 10 } = req.query;
 
   // Search for the actual posts and the number of posts
-  async.parallel({
-    posts(callback) {
-      Post
-        .find(filters, 'title description images')
-        .collation({ locale: 'en', strength: 2 }) // Ignore sensitivity for alphabetical sort
-        .sort(sort)
-        .limit(limit * 1)
-        .skip((page - 1) * limit)
-        .exec(callback);
+  async.parallel(
+    {
+      posts(callback) {
+        Post.find(filters, 'title description')
+          .populate('images', 'thumbnail')
+          .collation({ locale: 'en', strength: 2 }) // Ignore sensitivity for alphabetical sort
+          .sort(sort)
+          .limit(limit * 1)
+          .skip((page - 1) * limit)
+          .exec(callback);
+      },
+      count(callback) {
+        Post.countDocuments(filters).exec(callback);
+      },
     },
-    count(callback) {
-      Post
-        .countDocuments(filters)
-        .exec(callback);
+    (err, results) => {
+      if (err) return next(err);
+      res.set('count', results.count);
+      return res.json(results.posts);
     },
-  }, (err, results) => {
-    if (err) return next(err);
-    res.set('count', results.count);
-    return res.json(results.posts);
-  });
+  );
 };
 
 // Read a specific post
 exports.post_detail = function (req, res) {
   Post.findById(req.params.postId)
     .populate('author', 'username _id')
+    .populate('images')
     .exec((err, post) => {
       if (typeof post === 'undefined') {
         return res.json({ error: 'Post not found.' });
@@ -148,31 +157,41 @@ exports.post_update_put = [
     };
 
     // Add images if there are any
-    if (req.files.length > 0) {
+    if (req.images.length > 0) {
       const images = [];
-      req.files.map((image) => {
+      req.images.map((image) => {
         // Push the image in images
         images.push({
           name: image.filename,
-          data: fs.readFileSync(path.join(__dirname, `../images/${image.filename}`)),
+          data: fs.readimagesync(
+            path.join(__dirname, `../images/${image.filename}`),
+          ),
           contentType: image.mimetype,
         });
 
         // Delete the image from the disk after using it
-        fs.unlink(path.join(__dirname, `../images/${image.filename}`), (err) => {
-          if (err) throw err;
-        });
+        fs.unlink(
+          path.join(__dirname, `../images/${image.filename}`),
+          (err) => {
+            if (err) throw err;
+          },
+        );
       });
       data.images = images;
     }
 
     // Data is valid, update the post.
-    Post.findByIdAndUpdate(req.params.postId, { $set: data }, {}, (err, post) => {
-      if (err) return next(err);
-      // Use 303 status to redirect to GET.
-      // Otherwise, it infinitely makes PUT requests.
-      return res.redirect(303, post.url);
-    });
+    Post.findByIdAndUpdate(
+      req.params.postId,
+      { $set: data },
+      {},
+      (err, post) => {
+        if (err) return next(err);
+        // Use 303 status to redirect to GET.
+        // Otherwise, it infinitely makes PUT requests.
+        return res.redirect(303, post.url);
+      },
+    );
   },
 ];
 

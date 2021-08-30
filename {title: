@@ -1,9 +1,0 @@
-HTTP/1.1 404 Not Found
-X-Powered-By: Express
-Access-Control-Allow-Origin: *
-Content-Type: application/json; charset=utf-8
-Content-Length: 23
-ETag: W/"17-SuRA/yvUWUo8rK6x7dKURLeBo+0"
-Date: Wed, 05 May 2021 15:16:52 GMT
-Connection: keep-alive
-

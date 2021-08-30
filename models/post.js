@@ -9,9 +9,7 @@ const PostSchema = new Schema(
     description: String,
     text: { type: String, required: true },
     images: [{
-      name: String,
-      data: Buffer,
-      contentType: String,
+      type: Schema.Types.ObjectId, ref: 'File',
     }],
     prep_time: String,
     cook_time: String,
