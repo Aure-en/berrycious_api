@@ -16,7 +16,7 @@ exports.post_create_post = [
   body('published', 'Post must be private or public').isBoolean(),
   body('ingredient.*'),
 
-  (req, res, next) => {
+  async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       // There are errors. Send errors.
@@ -50,26 +50,50 @@ exports.post_create_post = [
     };
 
     // Add images if there are any
-    if (req.images) {
+    if (req.images?.length > 0) {
       const images = [];
-      req.images.map((image) => {
-        // Push the image in images
-        images.push({
-          name: image.filename,
-          data: fs.readimagesync(
-            path.join(__dirname, `../images/${image.filename}`),
-          ),
-          contentType: image.mimetype,
-        });
+      await Promise.all(
+        req.images.map(async (file) => {
+          // Save the image data
+          const fileData = {
+            name: file.filename,
+            data: fs.readFileSync(
+              path.join(__dirname, `../temp/${file.filename}`),
+            ),
+            contentType: file.mimetype,
+            size: file.size,
+          };
 
-        // Delete the image from the disk after using it
-        fs.unlink(
-          path.join(__dirname, `../images/${image.filename}`),
-          (err) => {
+          // Create a thumbnail and add it to the image data.
+          await sharp(path.join(__dirname, `../temp/${file.filename}`))
+            .resize(64, 64, {
+              fit: sharp.fit.cover,
+            })
+            .toFormat('webp')
+            .toFile(path.join(__dirname, `../temp/sm-${file.filename}`));
+          fileData.thumbnail = fs.readFileSync(
+            path.join(__dirname, `../temp/sm-${file.filename}`),
+          );
+
+          // Delete the thumbnail from the disk after using it
+          fs.unlink(
+            path.join(__dirname, `../temp/sm-${file.filename}`),
+            (err) => {
+              if (err) throw err;
+            },
+          );
+
+          // Delete the images from the disk after using it
+          fs.unlink(path.join(__dirname, `../temp/${file.filename}`), (err) => {
             if (err) throw err;
-          },
-        );
-      });
+          });
+
+          const fileObj = new File(fileData);
+
+          const toFiles = await fileObj.save();
+          images.push(toFiles._id);
+        }),
+      );
       data.images = images;
     }
 
@@ -156,30 +180,6 @@ exports.post_update_put = [
       _id: req.params.postId,
     };
 
-    // Add images if there are any
-    if (req.images.length > 0) {
-      const images = [];
-      req.images.map((image) => {
-        // Push the image in images
-        images.push({
-          name: image.filename,
-          data: fs.readimagesync(
-            path.join(__dirname, `../images/${image.filename}`),
-          ),
-          contentType: image.mimetype,
-        });
-
-        // Delete the image from the disk after using it
-        fs.unlink(
-          path.join(__dirname, `../images/${image.filename}`),
-          (err) => {
-            if (err) throw err;
-          },
-        );
-      });
-      data.images = images;
-    }
-
     // Data is valid, update the post.
     Post.findByIdAndUpdate(
       req.params.postId,
@@ -194,6 +194,74 @@ exports.post_update_put = [
     );
   },
 ];
+
+// Remove an image to a post (PUT)
+exports.post_remove_image = (req, res, next) => {
+  Post.findByIdAndUpdate(req.params.postId, {
+    $pull: { images: req.params.imageId },
+  }).exec(async (err, post) => {
+    if (err) return next(err);
+    await Promise.all(
+      post.images.map((image) => {
+        File.deleteOne({ _id: image });
+      }),
+    );
+    // Using redirect to send the updated post.
+    return res.redirect(303, post.url);
+  });
+};
+
+// Add images to a post (PUT)
+exports.post_add_images = async (req, res, next) => {
+  if (!req.files || req.files.length === 0) return;
+
+  const images = [];
+  await Promise.all(
+    req.images.map(async (file) => {
+      // Save the image data
+      const fileData = {
+        name: file.filename,
+        data: fs.readFileSync(path.join(__dirname, `../temp/${file.filename}`)),
+        contentType: file.mimetype,
+        size: file.size,
+      };
+
+      // Create a thumbnail and add it to the image data.
+      await sharp(path.join(__dirname, `../temp/${file.filename}`))
+        .resize(64, 64, {
+          fit: sharp.fit.cover,
+        })
+        .toFormat('webp')
+        .toFile(path.join(__dirname, `../temp/sm-${file.filename}`));
+      fileData.thumbnail = fs.readFileSync(
+        path.join(__dirname, `../temp/sm-${file.filename}`),
+      );
+
+      // Delete the thumbnail from the disk after using it
+      fs.unlink(path.join(__dirname, `../temp/sm-${file.filename}`), (err) => {
+        if (err) throw err;
+      });
+
+      // Delete the images from the disk after using it
+      fs.unlink(path.join(__dirname, `../temp/${file.filename}`), (err) => {
+        if (err) throw err;
+      });
+
+      const fileObj = new File(fileData);
+      const toFiles = await fileObj.save();
+      images.push(toFiles._id);
+    }),
+  );
+
+  Post.findByIdAndUpdate(
+    req.params.postId,
+    { $push: { images } },
+    { new: true },
+  ).exec((err, post) => {
+    if (err) return next(err);
+    return res.json(post);
+  });
+};
 
 // Delete a post (POST)
 exports.post_delete = function (req, res, next) {
