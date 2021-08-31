@@ -122,7 +122,7 @@ describe('All posts containing a specific ingredients can be sent', () => {
   beforeAll(async () => {
   // Create ingredient and post
     ingredient = await createIngredient(user);
-    await createPost(user, ingredient);
+    await createPost(user, { ingredient });
   });
 
   test('List of posts containing a specific ingredient', async () => {

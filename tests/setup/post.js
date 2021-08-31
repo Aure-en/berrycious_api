@@ -1,7 +1,7 @@
 const request = require('supertest');
 const app = require('./app');
 
-const createPost = async (user, ingredient, published = true) => {
+const createPost = async (user, { ingredient, category, published }) => {
   const res = await request(app)
     .post('/posts')
     .set({
@@ -12,7 +12,8 @@ const createPost = async (user, ingredient, published = true) => {
       title: 'Title',
       text: 'Text',
       ingredient,
-      published,
+      category,
+      published: published || true,
     });
   return res.body;
 };
