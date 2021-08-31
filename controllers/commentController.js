@@ -29,7 +29,7 @@ exports.comment_create_post = [
 
     comment.save((err) => {
       if (err) return next(err);
-      res.redirect(comment.url);
+      return res.json(comment);
     });
   },
 ];
@@ -60,15 +60,15 @@ exports.comment_reply_post = [
     });
 
     async.parallel(
-      [
+      {
         // Save the new comment
-        function (callback) {
-          comment.save((err) => {
+        comment(callback) {
+          comment.save((err, comment) => {
             if (err) return next(err);
-            callback();
+            callback(comment);
           });
         },
-        function (callback) {
+        function(callback) {
           // Update the parent comment's children
           Comment.findByIdAndUpdate(
             req.params.commentId,
@@ -80,10 +80,10 @@ exports.comment_reply_post = [
             },
           );
         },
-      ],
-      (err) => {
+      },
+      (err, results) => {
         if (err) return next(err);
-        res.redirect(303, `/posts/${req.params.postId}/comments`);
+        return res.json(results.comment);
       },
     );
   },
@@ -124,7 +124,7 @@ exports.comment_list = function (req, res, next) {
     });
 };
 
-// Read a specific post (GET)
+// Read a specific comment (GET)
 exports.comment_detail = function (req, res, next) {
   Comment.findById(req.params.commentId).exec((err, comment) => {
     if (err) return next(err);
@@ -156,11 +156,11 @@ exports.comment_update_put = [
     Comment.findByIdAndUpdate(
       req.params.commentId,
       { username: req.body.username, content: req.body.content },
-      {}, (err, comment) => {
+      { new: true }, (err, comment) => {
         if (err) return next(err);
         // Use 303 status to redirect to GET...
         // Otherwise, it infinitely makes PUT requests.
-        return res.redirect(303, comment.url);
+        return res.json(comment);
       },
     );
   },
@@ -189,7 +189,7 @@ exports.comment_delete = function (req, res, next) {
       if (children.length === 0) {
         Comment.findByIdAndRemove(req.params.commentId, (err) => {
           if (err) return next(err);
-          res.redirect(303, `/posts/${req.params.postId}/comments`);
+          return res.json({ success: 'Comment deleted.' });
         });
       } else {
         // If the comment had children, keep the document but
@@ -199,7 +199,7 @@ exports.comment_delete = function (req, res, next) {
         },
         (err) => {
           if (err) return next(err);
-          res.redirect(303, `/posts/${req.params.postId}/comments`);
+          return res.json({ success: 'Comment deleted.' });
         });
       }
     },
