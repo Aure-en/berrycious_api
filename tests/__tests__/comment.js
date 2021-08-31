@@ -79,3 +79,27 @@ describe('Comment deletion', () => {
     expect(res.body.success).toBeDefined();
   });
 });
+
+describe('Comments can be read', () => {
+  let comment;
+  beforeAll(async () => {
+    // Create a comment
+    comment = await createComment(post);
+  });
+
+  test('A specific comment can be displayed', async () => {
+    const res = await request(app)
+      .get(`/posts/${post._id}/comments/${comment._id}`);
+    const displayedComment = res.body;
+    expect(displayedComment.username).toBe('User');
+    expect(displayedComment.content).toBe('Content');
+    expect(displayedComment.post).toBe(post._id);
+  });
+
+  test('All comments on a post can be displayed', async () => {
+    const res = await request(app)
+      .get(`/posts/${post._id}/comments`);
+    expect(res.body.length).toBeGreaterThan(1);
+    expect(res.body.find((postComment) => postComment._id === comment._id)).toBeDefined();
+  });
+});
