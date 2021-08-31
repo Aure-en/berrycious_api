@@ -99,9 +99,9 @@ exports.post_create_post = [
 
     const post = new Post(data);
 
-    post.save((err) => {
+    post.save((err, post) => {
       if (err) return next(err);
-      res.redirect(post.url);
+      return res.json(post);
     });
   },
 ];
@@ -195,7 +195,7 @@ exports.post_update_put = [
   },
 ];
 
-// Remove an image to a post (PUT)
+// Remove an image to a post (PATCH)
 exports.post_remove_image = (req, res, next) => {
   Post.findByIdAndUpdate(req.params.postId, {
     $pull: { images: req.params.imageId },
@@ -211,7 +211,7 @@ exports.post_remove_image = (req, res, next) => {
   });
 };
 
-// Add images to a post (PUT)
+// Add images to a post (PATCH)
 exports.post_add_images = async (req, res, next) => {
   if (!req.files || req.files.length === 0) return;
 

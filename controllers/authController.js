@@ -68,7 +68,7 @@ exports.auth_signup_post = [
         });
       }
     });
-    next();
+    return next();
   },
 
   // Everything is fine, save the user.
