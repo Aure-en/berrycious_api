@@ -86,9 +86,9 @@ exports.category_create_post = [
   // Everything is fine. Save the category.
   (req, res, next) => {
     const category = new Category({ name: req.body.name, description: req.body.description });
-    category.save((err) => {
+    category.save((err, category) => {
       if (err) return next(err);
-      return res.redirect(303, category.url);
+      return res.json(category);
     });
   },
 ];
@@ -113,11 +113,11 @@ exports.category_update_put = [
       _id: req.params.categoryId,
     });
 
-    Category.findByIdAndUpdate(req.params.categoryId, category, {}, (err) => {
+    Category.findByIdAndUpdate(req.params.categoryId, category, { new: true }, (err, category) => {
       if (err) return next(err);
       // Use 303 status to redirect to GET.
       // Otherwise, it infinitely makes PUT requests.
-      res.redirect(303, category.url);
+      return res.json(category);
     });
   },
 ];
@@ -141,6 +141,6 @@ exports.category_delete = function (req, res, next) {
     },
   ], (err) => {
     if (err) return next(err);
-    res.redirect(303, '/categories');
+    return res.json({ success: 'Category deleted.' });
   });
 };

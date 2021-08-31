@@ -46,9 +46,9 @@ exports.message_create = [
       timestamp: new Date(),
     });
 
-    message.save((err) => {
+    message.save((err, message) => {
       if (err) return next(err);
-      return res.json({ success: 'Message sent.' });
+      return res.json(message);
     });
   },
 ];
@@ -57,6 +57,6 @@ exports.message_create = [
 exports.message_delete = function (req, res, next) {
   Message.findByIdAndRemove(req.params.messageId).exec((err) => {
     if (err) return next(err);
-    res.redirect(303, '/messages');
+    return res.json({ success: 'Message deleted.' });
   });
 };
