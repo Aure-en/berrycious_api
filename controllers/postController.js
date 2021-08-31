@@ -66,7 +66,7 @@ exports.post_create_post = [
 
           // Create a thumbnail and add it to the image data.
           await sharp(path.join(__dirname, `../images/${file.filename}`))
-            .resize(64, 64, {
+            .resize(300, 300, {
               fit: sharp.fit.cover,
             })
             .toFormat('webp')
@@ -119,7 +119,7 @@ exports.post_list = function (req, res, next) {
     {
       posts(callback) {
         Post.find(filters, 'title description')
-          .populate('images', 'thumbnail')
+          .populate('images', 'name thumbnail')
           .collation({ locale: 'en', strength: 2 }) // Ignore sensitivity for alphabetical sort
           .sort(sort)
           .limit(limit * 1)
@@ -224,7 +224,7 @@ exports.post_add_images = async (req, res, next) => {
 
       // Create a thumbnail and add it to the image data.
       await sharp(path.join(__dirname, `../images/${file.filename}`))
-        .resize(64, 64, {
+        .resize(300, 300, {
           fit: sharp.fit.cover,
         })
         .toFormat('webp')
