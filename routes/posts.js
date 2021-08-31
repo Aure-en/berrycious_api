@@ -26,7 +26,7 @@ router.put(
   postController.post_update_put,
 );
 
-// PATCH request to remove an image from a post
+// PATCH request to add an image from a post
 router.patch(
   '/:postId/images',
   passport.authenticate('jwt', { session: false }),
@@ -35,7 +35,7 @@ router.patch(
   postController.post_add_images,
 );
 
-// PATCH request to add images to a post
+// PATCH request to remove an image from a post
 router.patch(
   '/:postId/images/:imageId',
   passport.authenticate('jwt', { session: false }),

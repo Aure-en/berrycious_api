@@ -201,11 +201,7 @@ exports.post_remove_image = (req, res, next) => {
     $pull: { images: req.params.imageId },
   }).exec(async (err, post) => {
     if (err) return next(err);
-    await Promise.all(
-      post.images.map((image) => {
-        File.deleteOne({ _id: image });
-      }),
-    );
+    await File.deleteOne({ _id: req.params.imageId });
     // Using redirect to send the updated post.
     return res.redirect(303, post.url);
   });

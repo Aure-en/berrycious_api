@@ -69,17 +69,15 @@ describe('Post update', () => {
   });
 
   test('Anonymous users cannot update posts', async () => {
-    const res = await request(app)
-      .put(`/posts/${post._id}`)
-      .send({
-        title: 'Updated Title',
-        text: 'Updated Text',
-        published: false,
-      });
+    const res = await request(app).put(`/posts/${post._id}`).send({
+      title: 'Updated Title',
+      text: 'Updated Text',
+      published: false,
+    });
     expect(res.status).toBe(401);
   });
 
-  test('A post author can update their post', async () => {
+  test('A post author can update their posts', async () => {
     const res = await request(app)
       .put(`/posts/${post._id}`)
       .set({
@@ -96,6 +94,28 @@ describe('Post update', () => {
     expect(updatedPost.text).toBe('Updated Text');
     expect(updatedPost.published).toBe(false);
   });
+
+  test('A post author can add images to their posts', async () => {
+    const res = await request(app)
+      .patch(`/posts/${post._id}/images`)
+      .set({
+        Authorization: `Bearer ${user.token}`,
+      })
+      .attach('images', path.resolve(__dirname, '../assets/2.png'))
+      .redirects(1);
+    expect(res.body.images.length).toBe(2);
+  });
+
+  test('A post author can remove images from their posts', async () => {
+    const image = post.images[0];
+    const res = await request(app)
+      .patch(`/posts/${post._id}/images/${image}`)
+      .set({
+        Authorization: `Bearer ${user.token}`,
+      })
+      .redirects(1);
+    expect(res.body.images.find((postImage) => postImage === image)).not.toBeDefined();
+  });
 });
 
 describe('Post deletion', () => {
@@ -109,8 +129,7 @@ describe('Post deletion', () => {
   });
 
   test('Anonymous users cannot delete posts', async () => {
-    const res = await request(app)
-      .delete(`/posts/${post._id}`);
+    const res = await request(app).delete(`/posts/${post._id}`);
     expect(res.status).toBe(401);
   });
 
