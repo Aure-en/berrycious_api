@@ -65,7 +65,7 @@ exports.comment_reply_post = [
         comment(callback) {
           comment.save((err, comment) => {
             if (err) return next(err);
-            callback(comment);
+            callback(null, comment);
           });
         },
         function(callback) {
@@ -76,7 +76,7 @@ exports.comment_reply_post = [
             {},
             (err) => {
               if (err) return next(err);
-              callback();
+              callback(null);
             },
           );
         },
