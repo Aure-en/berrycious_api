@@ -7,7 +7,7 @@ const cors = require('cors');
 const compression = require('compression');
 const helmet = require('helmet');
 const mongoose = require('mongoose');
-require('dotenv').config({ path: path.resolve(__dirname, '.env.local') });
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 require('./auth/passport');
 
 const indexRouter = require('./routes/index');
@@ -22,7 +22,7 @@ const app = express();
 const httpServer = require('http').createServer(app);
 
 // Set up mongoose
-const mongoDB = `mongodb+srv://Aureen:${process.env.MONGODB_PASSWORD}@lettuceat.iqrxt.mongodb.net/lettuce_eat?retryWrites=true&w=majority`;
+const mongoDB = process.env.MONGODB_URI;
 mongoose.connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true });
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error: '));

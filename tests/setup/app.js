@@ -3,7 +3,7 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env.local') });
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 require('../../auth/passport');
 
 const indexRouter = require('../../routes/index');
