@@ -35,6 +35,7 @@ exports.ingredient_posts = function (req, res, next) {
     {
       posts(callback) {
         Post.find({ ingredient: req.params.ingredientId })
+          .populate('images', 'name thumbnail')
           .collation({ locale: 'en', strength: 2 })
           .sort(sort)
           .limit(limit * 1)
@@ -43,7 +44,7 @@ exports.ingredient_posts = function (req, res, next) {
       },
       count(callback) {
         Post.countDocuments({ ingredient: req.params.ingredientId }).exec(
-          callback
+          callback,
         );
       },
     },
@@ -51,7 +52,7 @@ exports.ingredient_posts = function (req, res, next) {
       if (err) return next(err);
       res.set('count', results.count);
       return res.json(results.posts);
-    }
+    },
   );
 };
 
@@ -88,7 +89,7 @@ exports.ingredient_create_post = [
           });
         }
         next();
-      }
+      },
     );
   },
 
@@ -140,7 +141,7 @@ exports.ingredient_delete = function (req, res, next) {
       function (callback) {
         Post.updateMany(
           { ingredient: req.params.ingredientId },
-          { $pull: { ingredient: req.params.ingredientId } }
+          { $pull: { ingredient: req.params.ingredientId } },
         ).exec(callback);
       },
 
@@ -152,6 +153,6 @@ exports.ingredient_delete = function (req, res, next) {
     (err) => {
       if (err) return next(err);
       return res.json({ success: 'Ingredient deleted.' });
-    }
+    },
   );
 };

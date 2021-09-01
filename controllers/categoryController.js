@@ -32,6 +32,7 @@ exports.category_posts = function (req, res, next) {
     posts(callback) {
       Post
         .find({ category: req.params.categoryId })
+        .populate('images', 'name thumbnail')
         .collation({ locale: 'en', strength: 2 })
         .sort(sort)
         .limit(limit * 1)
